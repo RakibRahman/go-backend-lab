@@ -1,28 +1,58 @@
-package main
+package user
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 )
 
-type CreateUserRequest struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	nameQuery := r.URL.Query().Get("name")
+
+	if nameQuery != "" {
+		log.Printf("%s", nameQuery)
+
+		var matches []User
+		for _, u := range UserList {
+			if strings.EqualFold(u.Name, nameQuery) {
+				matches = append(matches, u)
+			}
+		}
+
+		if len(matches) == 0 {
+			errMsg := map[string]string{"error": "no user found with that name"}
+
+			w.WriteHeader(http.StatusNotFound)
+			if err := json.NewEncoder(w).Encode(errMsg); err != nil {
+				log.Printf("failed to encode error response: %v", err)
+				return
+
+			}
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(matches); err != nil {
+			log.Printf("failed to encode error response: %v", err)
+			return
+		}
+		return
+	}
+	if err := json.NewEncoder(w).Encode(UserList); err != nil {
+		log.Printf("failed to encode error response: %v", err)
+	}
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello from Golang!")
-}
-
-func aboutHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "About page")
-}
-
-func createUserHandler(w http.ResponseWriter, r *http.Request) {
+func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -72,37 +102,5 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Printf("failed to encode response: %v", err)
-	}
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	response := map[string]string{
-		"status": "OK",
-	}
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("failed to encode response: %v", err)
-	}
-
-}
-
-func main() {
-
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/about", aboutHandler)
-	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/users", createUserHandler)
-
-	log.Println("Server running on http://localhost:8080")
-
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
 	}
 }
