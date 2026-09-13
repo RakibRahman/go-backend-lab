@@ -12,3 +12,19 @@ This repo is used to practice and gradually build:
 - background jobs
 - SSE
 - logging and observability
+
+## Project structure
+
+```
+.
+├── cmd/
+│   └── api/
+│       └── main.go        # entry point, route registration
+├── internal/
+│   └── user/
+│       ├── model.go       # User, CreateUserRequest types
+│       ├── data.go        # in-memory seed data (UserList)
+│       └── handler.go     # GetUserHandler, CreateUserHandler
+├── go.mod
+└── README.md
+```
