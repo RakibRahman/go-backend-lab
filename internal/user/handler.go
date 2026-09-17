@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+func GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodGet {
@@ -52,6 +52,42 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.PathValue("id")
+
+	var result User
+	log.Printf("%s", id)
+
+	for _, user := range UserList {
+		if user.ID == id {
+			result = user
+			break
+		}
+	}
+
+	if result.ID == "" {
+		errMsg := map[string]string{"error": "no user found with that id"}
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(errMsg); err != nil {
+			log.Printf("failed to encode error response: %v", err)
+			return
+		}
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Printf("failed to encode error response: %v", err)
+	}
+
+}
+
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -92,15 +128,15 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := uuid.NewString()
 
-	response := map[string]string{
-		"id":    id,
-		"name":  input.Name,
-		"email": input.Email,
+	user := User{
+		ID:    id,
+		Name:  input.Name,
+		Email: input.Email,
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	UserList = append(UserList, user)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
 		log.Printf("failed to encode response: %v", err)
 	}
 }
