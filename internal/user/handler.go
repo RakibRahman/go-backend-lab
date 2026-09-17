@@ -62,30 +62,24 @@ func GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 
-	var result User
-	log.Printf("%s", id)
-
 	for _, user := range UserList {
 		if user.ID == id {
-			result = user
-			break
-		}
-	}
-
-	if result.ID == "" {
-		errMsg := map[string]string{"error": "no user found with that id"}
-		w.WriteHeader(http.StatusNotFound)
-		if err := json.NewEncoder(w).Encode(errMsg); err != nil {
-			log.Printf("failed to encode error response: %v", err)
+			if err := json.NewEncoder(w).Encode(user); err != nil {
+				log.Printf("failed to encode response: %v", err)
+			}
 			return
 		}
-		return
 	}
 
-	if err := json.NewEncoder(w).Encode(result); err != nil {
+	errMsg := map[string]string{
+		"error": "user not found",
+	}
+
+	w.WriteHeader(http.StatusNotFound)
+
+	if err := json.NewEncoder(w).Encode(errMsg); err != nil {
 		log.Printf("failed to encode error response: %v", err)
 	}
-
 }
 
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -140,3 +134,5 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to encode response: %v", err)
 	}
 }
+
+func DeleteUserByID() {}
