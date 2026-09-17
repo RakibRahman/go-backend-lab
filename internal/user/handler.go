@@ -135,4 +135,30 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func DeleteUserByID() {}
+func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodDelete {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.PathValue("id")
+	for index, user := range UserList {
+		if user.ID == id {
+			UserList = append(UserList[:index], UserList[index+1:]...)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+	}
+
+	errMsg := map[string]string{
+		"error": "user not found",
+	}
+	w.WriteHeader(http.StatusNotFound)
+
+	if err := json.NewEncoder(w).Encode(errMsg); err != nil {
+		log.Printf("failed to encode error response: %v", err)
+	}
+
+}

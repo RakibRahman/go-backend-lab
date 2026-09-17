@@ -40,8 +40,9 @@ func main() {
 	http.HandleFunc("/about", aboutHandler)
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("POST /users", user.CreateUserHandler)
-	http.HandleFunc("GET /users/{id}", user.GetUserByIDHandler)
 	http.HandleFunc("GET /users", user.GetUserListHandler)
+	http.HandleFunc("GET /users/{id}", user.GetUserByIDHandler)
+	http.HandleFunc("DELETE /users/{id}", user.DeleteUserByID)
 
 	log.Println("Server running on http://localhost:8080")
 
