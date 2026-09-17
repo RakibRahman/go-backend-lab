@@ -135,7 +135,7 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
+func DeleteUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodDelete {
@@ -159,6 +159,16 @@ func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(errMsg); err != nil {
 		log.Printf("failed to encode error response: %v", err)
+	}
+
+}
+
+func UpdateUserByIDHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPatch {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
 
 }

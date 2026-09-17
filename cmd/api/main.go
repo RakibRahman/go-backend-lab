@@ -8,7 +8,32 @@ import (
 	"net/http"
 )
 
+func main() {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /{$}", homeHandler)
+	mux.HandleFunc("GET /about", aboutHandler)
+	mux.HandleFunc("GET /health", healthHandler)
+	userRoutings(mux)
+
+	log.Println("Server running on http://localhost:8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func userRoutings(mux *http.ServeMux) {
+	mux.HandleFunc("GET /users", user.GetUserListHandler)
+	mux.HandleFunc("GET /users/{id}", user.GetUserByIDHandler)
+	mux.HandleFunc("POST /users", user.CreateUserHandler)
+	mux.HandleFunc("PATCH /users/{id}", user.UpdateUserByIDHandler)
+	mux.HandleFunc("DELETE /users/{id}", user.DeleteUserByIDHandler)
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+	}
 	fmt.Fprintf(w, "Hello from Golang!")
 }
 
@@ -32,21 +57,4 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to encode response: %v", err)
 	}
 
-}
-
-func main() {
-
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/about", aboutHandler)
-	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("POST /users", user.CreateUserHandler)
-	http.HandleFunc("GET /users", user.GetUserListHandler)
-	http.HandleFunc("GET /users/{id}", user.GetUserByIDHandler)
-	http.HandleFunc("DELETE /users/{id}", user.DeleteUserByID)
-
-	log.Println("Server running on http://localhost:8080")
-
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
-	}
 }
