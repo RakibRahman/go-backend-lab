@@ -170,5 +170,31 @@ func UpdateUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	id := r.PathValue("id")
 
+	var input UpdateUserRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	for i := range UserList {
+		if UserList[i].ID == id {
+			if input.Name != nil {
+				UserList[i].Name = *input.Name
+			}
+
+			if input.Email != nil {
+				UserList[i].Email = *input.Email
+			}
+
+			if err := json.NewEncoder(w).Encode(UserList[i]); err != nil {
+				log.Printf("failed to encode error response: %v", err)
+			}
+			return
+		}
+	}
+
+	http.Error(w, "user not found", http.StatusNotFound)
 }
