@@ -1,8 +1,11 @@
 include .env
 export
 
+.PHONY: run db-up db-down db-status db-logs db-shell \
+        migrate-up migrate-down migrate-version migration-new
+
 run:
-	go run ./cmd/api/main.go
+	go run ./cmd/api
 
 db-up:
 	docker compose up -d
@@ -17,9 +20,7 @@ db-logs:
 	docker compose logs -f postgres
 
 db-shell:
-	docker compose exec postgres psql -U app -d backend_lab
-
-.PHONY: migrate-up migrate-down migrate-version migration-new
+	docker compose exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
 migrate-up:
 	migrate -path migrations -database "$(DATABASE_URL)" up
