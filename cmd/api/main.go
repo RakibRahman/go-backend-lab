@@ -8,13 +8,15 @@ import (
 	"net/http"
 )
 
+const apiVersion = " /api/v1"
+
 func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /{$}", homeHandler)
 	mux.HandleFunc("GET /about", aboutHandler)
 	mux.HandleFunc("GET /health", healthHandler)
-	userRoutings(mux)
+	userRoutes(mux)
 
 	log.Println("Server running on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
@@ -22,12 +24,12 @@ func main() {
 	}
 }
 
-func userRoutings(mux *http.ServeMux) {
-	mux.HandleFunc("GET /users", user.GetUserListHandler)
-	mux.HandleFunc("GET /users/{id}", user.GetUserByIDHandler)
-	mux.HandleFunc("POST /users", user.CreateUserHandler)
-	mux.HandleFunc("PATCH /users/{id}", user.UpdateUserByIDHandler)
-	mux.HandleFunc("DELETE /users/{id}", user.DeleteUserByIDHandler)
+func userRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET "+apiVersion+"/users", user.GetUserListHandler)
+	mux.HandleFunc("GET "+apiVersion+"/users/{id}", user.GetUserByIDHandler)
+	mux.HandleFunc("POST "+apiVersion+"/users", user.CreateUserHandler)
+	mux.HandleFunc("PATCH "+apiVersion+"/users/{id}", user.UpdateUserByIDHandler)
+	mux.HandleFunc("DELETE "+apiVersion+"/users/{id}", user.DeleteUserByIDHandler)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
