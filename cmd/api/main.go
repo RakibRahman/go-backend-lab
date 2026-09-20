@@ -1,16 +1,30 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"mini-crud/internal/platform/database"
 	"mini-crud/internal/user"
 	"net/http"
+	"os"
 )
 
 const apiVersion = " /api/v1"
 
 func main() {
+	ctx := context.Background()
+	databaseURL := os.Getenv("DATABASE_URL")
+
+	db, err := database.NewPostgresPool(ctx, databaseURL)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer db.Close()
+	log.Println("connected to PostgreSQL")
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /{$}", homeHandler)
