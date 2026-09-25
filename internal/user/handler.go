@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -101,47 +99,39 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input CreateUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		errMsg := map[string]string{
-			"error": "invalid request body",
-		}
-
 		w.WriteHeader(http.StatusBadRequest)
-
-		if err := json.NewEncoder(w).Encode(errMsg); err != nil {
-			log.Printf("failed to encode error response: %v", err)
-		}
-
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "invalid request body",
+		})
 		return
 	}
 
 	if input.Name == "" || input.Email == "" {
-		errMsg := map[string]string{
-			"error": "name and email are required",
-		}
-
 		w.WriteHeader(http.StatusBadRequest)
-
-		if err := json.NewEncoder(w).Encode(errMsg); err != nil {
-			log.Printf("failed to encode error response: %v", err)
-		}
-
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "name and email are required",
+		})
 		return
 	}
 
-	id := uuid.NewString()
+	createdUser, err := h.repo.CreateUser(r.Context(), input)
 
-	user := CreateUserRequest{
-		ID:    id,
-		Name:  input.Name,
-		Email: input.Email,
+	if err != nil {
+		log.Printf("failed to create user: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "failed to create user",
+		})
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	createdUser, err := h.repo.CreateUser(r.Context(), user)
 
-	if err := json.NewEncoder(w).Encode(user); err != nil {
+	if err := json.NewEncoder(w).Encode(createdUser); err != nil {
 		log.Printf("failed to encode response: %v", err)
 	}
+
 }
 
 func DeleteUserByIDHandler(w http.ResponseWriter, r *http.Request) {
