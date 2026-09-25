@@ -9,6 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type Handler struct {
+	repo *Repository
+}
+
+func NewHandler(repo *Repository) *Handler {
+	return &Handler{repo: repo}
+}
+
 func GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -82,7 +90,7 @@ func GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -122,14 +130,15 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := uuid.NewString()
 
-	user := User{
+	user := CreateUserRequest{
 		ID:    id,
 		Name:  input.Name,
 		Email: input.Email,
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	UserList = append(UserList, user)
+	createdUser, err := h.repo.CreateUser(r.Context(), user)
+
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		log.Printf("failed to encode response: %v", err)
 	}

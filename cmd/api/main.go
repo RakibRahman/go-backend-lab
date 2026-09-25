@@ -25,12 +25,16 @@ func main() {
 
 	defer db.Close()
 	log.Println("connected to PostgreSQL")
+
+	userRepo := user.NewRepository(db)
+	userHandler := user.NewHandler(userRepo)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /{$}", homeHandler)
 	mux.HandleFunc("GET /about", aboutHandler)
 	mux.HandleFunc("GET /health", healthHandler)
-	userRoutes(mux)
+	userRoutes(mux, userHandler)
 
 	log.Println("Server running on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
@@ -38,10 +42,10 @@ func main() {
 	}
 }
 
-func userRoutes(mux *http.ServeMux) {
+func userRoutes(mux *http.ServeMux, handler *user.Handler) {
 	mux.HandleFunc("GET "+apiVersion+"/users", user.GetUserListHandler)
 	mux.HandleFunc("GET "+apiVersion+"/users/{id}", user.GetUserByIDHandler)
-	mux.HandleFunc("POST "+apiVersion+"/users", user.CreateUserHandler)
+	mux.HandleFunc("POST "+apiVersion+"/users", handler.CreateUserHandler)
 	mux.HandleFunc("PATCH "+apiVersion+"/users/{id}", user.UpdateUserByIDHandler)
 	mux.HandleFunc("DELETE "+apiVersion+"/users/{id}", user.DeleteUserByIDHandler)
 }
