@@ -39,8 +39,9 @@ func (h *Handler) GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	offset := page * limit
+	term := r.URL.Query().Get("term")
 
-	usersResponse, dbErr := h.repo.GetUsers(r.Context(), limit, offset)
+	usersResponse, dbErr := h.repo.GetUsers(r.Context(), limit, offset, term)
 
 	if dbErr != nil {
 		log.Printf("failed to get users list: %v", dbErr)
@@ -49,13 +50,6 @@ func (h *Handler) GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	// nameQuery := r.URL.Query().Get("name")
-
-	// if nameQuery != "" {
-
-	// 	return
-	// }
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(usersResponse); err != nil {

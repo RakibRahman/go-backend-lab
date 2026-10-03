@@ -38,13 +38,24 @@ func (r *Repository) CreateUser(ctx context.Context, payload CreateUserRequest) 
 	return user, nil
 }
 
-func (r *Repository) GetUsers(ctx context.Context, limit int, offset int) (GetUsersResponse, error) {
+func (r *Repository) GetUsers(ctx context.Context, limit int, offset int, term string) (GetUsersResponse, error) {
 	query := `SELECT id, name, email from users
 				ORDER BY created_at DESC
 				LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.Query(ctx, query, limit, offset)
+	args := []any{limit, offset}
+
+	if term != "" {
+		query = `SELECT id, name, email from users
+					WHERE name ILIKE $3 || '%' OR email ILIKE $3 || '%'
+				ORDER BY created_at DESC
+				LIMIT $1 OFFSET $2
+	`
+		args = append(args, term)
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
 
 	if err != nil {
 		return GetUsersResponse{}, err
