@@ -83,7 +83,15 @@ func (r *Repository) GetUsers(ctx context.Context, limit int, offset int, term s
 	}
 	var total int64
 
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM users;`).Scan(&total); err != nil {
+	countQuery := `SELECT COUNT(*) FROM users`
+	countArgs := []any{}
+
+	if term != "" {
+		countQuery = `SELECT COUNT(*) FROM users WHERE name ILIKE $1 || '%' OR email ILIKE $1 || '%'`
+		countArgs = append(countArgs, term)
+	}
+
+	if err := r.db.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
 		return GetUsersResponse{}, err
 	}
 
