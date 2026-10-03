@@ -37,3 +37,52 @@ func (r *Repository) CreateUser(ctx context.Context, payload CreateUserRequest) 
 	}
 	return user, nil
 }
+
+func (r *Repository) GetUsers(ctx context.Context, limit int, offset int) (GetUsersResponse, error) {
+	query := `select * from users
+				ORDER BY created_at DESC
+				LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.Query(ctx, query, limit, offset)
+
+	if err != nil {
+		return GetUsersResponse{}, err
+	}
+	defer rows.Close()
+	users := make([]User, 0)
+
+	for rows.Next() {
+		var user User
+
+		if err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+		); err != nil {
+			return GetUsersResponse{}, err
+		}
+
+		users = append(users, user)
+
+	}
+
+	if err := rows.Err(); err != nil {
+		return GetUsersResponse{}, err
+	}
+	var total int64
+
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM users;`).Scan(&total); err != nil {
+		return GetUsersResponse{}, err
+	}
+
+	hasMore := int64(offset+limit) < total
+
+	return GetUsersResponse{
+		Content:       users,
+		TotalElements: total,
+		HasMore:       hasMore,
+		Limit:         limit,
+		Offset:        offset,
+	}, nil
+}
