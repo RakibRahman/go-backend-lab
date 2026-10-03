@@ -15,6 +15,15 @@ func NewHandler(repo *Repository) *Handler {
 	return &Handler{repo: repo}
 }
 
+func queryIntDefault(r *http.Request, key string, fallback int) int {
+	if v := r.URL.Query().Get(key); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil {
+			return parsed
+		}
+	}
+	return fallback
+}
+
 func (h *Handler) GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -23,21 +32,8 @@ func (h *Handler) GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := 20
-	page := 0
-
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil {
-			limit = parsed
-		}
-	}
-
-	if p := r.URL.Query().Get("page"); p != "" {
-		if parsed, err := strconv.Atoi(p); err == nil {
-			page = parsed
-		}
-	}
-
+	limit := queryIntDefault(r, "limit", 20)
+	page := queryIntDefault(r, "page", 0)
 	offset := page * limit
 	term := r.URL.Query().Get("term")
 
