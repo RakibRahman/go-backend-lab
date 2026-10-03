@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
+	"strconv"
 )
 
 type Handler struct {
@@ -15,7 +15,7 @@ func NewHandler(repo *Repository) *Handler {
 	return &Handler{repo: repo}
 }
 
-func GetUserListHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodGet {
@@ -23,37 +23,42 @@ func GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nameQuery := r.URL.Query().Get("name")
+	limit := 20
+	page := 0
 
-	if nameQuery != "" {
-		log.Printf("%s", nameQuery)
-
-		var matches []User
-		for _, u := range UserList {
-			if strings.EqualFold(u.Name, nameQuery) {
-				matches = append(matches, u)
-			}
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil {
+			limit = parsed
 		}
+	}
 
-		if len(matches) == 0 {
-			errMsg := map[string]string{"error": "no user found with that name"}
-
-			w.WriteHeader(http.StatusNotFound)
-			if err := json.NewEncoder(w).Encode(errMsg); err != nil {
-				log.Printf("failed to encode error response: %v", err)
-				return
-
-			}
-			return
+	if p := r.URL.Query().Get("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil {
+			page = parsed
 		}
+	}
 
-		if err := json.NewEncoder(w).Encode(matches); err != nil {
-			log.Printf("failed to encode error response: %v", err)
-			return
-		}
+	offset := page * limit
+
+	usersResponse, dbErr := h.repo.GetUsers(r.Context(), limit, offset)
+
+	if dbErr != nil {
+		log.Printf("failed to get users list: %v", dbErr)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "failed to get users",
+		})
 		return
 	}
-	if err := json.NewEncoder(w).Encode(UserList); err != nil {
+
+	// nameQuery := r.URL.Query().Get("name")
+
+	// if nameQuery != "" {
+
+	// 	return
+	// }
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(usersResponse); err != nil {
 		log.Printf("failed to encode error response: %v", err)
 	}
 }

@@ -39,7 +39,7 @@ func (r *Repository) CreateUser(ctx context.Context, payload CreateUserRequest) 
 }
 
 func (r *Repository) GetUsers(ctx context.Context, limit int, offset int) (GetUsersResponse, error) {
-	query := `select * from users
+	query := `SELECT id, name, email from users
 				ORDER BY created_at DESC
 				LIMIT $1 OFFSET $2
 	`
@@ -82,7 +82,5 @@ func (r *Repository) GetUsers(ctx context.Context, limit int, offset int) (GetUs
 		Content:       users,
 		TotalElements: total,
 		HasMore:       hasMore,
-		Limit:         limit,
-		Offset:        offset,
 	}, nil
 }
