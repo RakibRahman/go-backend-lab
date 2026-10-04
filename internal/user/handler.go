@@ -2,9 +2,13 @@ package user
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"net/mail"
 	"strconv"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type Handler struct {
@@ -125,6 +129,65 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (h *Handler) UpdateUserByIDHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPatch {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	id := r.PathValue("id")
+
+	var input UpdateUserRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if input.Name != nil && *input.Name == "" {
+		http.Error(w, "name cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	if input.Email != nil && *input.Email == "" {
+		http.Error(w, "email cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	if input.Email != nil {
+		if _, err := mail.ParseAddress(*input.Email); err != nil {
+			http.Error(w, "email is not a valid format", http.StatusBadRequest)
+			return
+		}
+	}
+
+	updatedUser, err := h.repo.UpdateUserByID(r.Context(), id, input)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "user not found",
+			})
+			return
+		}
+
+		log.Printf("failed to update user: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "failed to update user",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(updatedUser); err != nil {
+		log.Printf("failed to encode response: %v", err)
+	}
+}
+
 func DeleteUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -151,40 +214,4 @@ func DeleteUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to encode error response: %v", err)
 	}
 
-}
-
-func UpdateUserByIDHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodPatch {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	id := r.PathValue("id")
-
-	var input UpdateUserRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	for i := range UserList {
-		if UserList[i].ID == id {
-			if input.Name != nil {
-				UserList[i].Name = *input.Name
-			}
-
-			if input.Email != nil {
-				UserList[i].Email = *input.Email
-			}
-
-			if err := json.NewEncoder(w).Encode(UserList[i]); err != nil {
-				log.Printf("failed to encode error response: %v", err)
-			}
-			return
-		}
-	}
-
-	http.Error(w, "user not found", http.StatusNotFound)
 }

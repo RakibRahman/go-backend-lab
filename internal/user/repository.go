@@ -115,3 +115,19 @@ func (r *Repository) GetUserByID(ctx context.Context, id string) (User, error) {
 
 	return user, nil
 }
+
+func (r *Repository) UpdateUserByID(ctx context.Context, id string, payload UpdateUserRequest) (User, error) {
+	var user User
+
+	query := `UPDATE users
+	SET name = COALESCE($1,name),email = COALESCE($2,email)
+	WHERE id = $3
+	RETURNING id,name,email
+	`
+	if err := r.db.QueryRow(ctx, query, payload.Name, payload.Email, id).Scan(&user.ID, &user.Name, &user.Email); err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+
+}
