@@ -53,7 +53,7 @@ func (h *Handler) GetUserListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodGet {
@@ -63,22 +63,18 @@ func GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 
-	for _, user := range UserList {
-		if user.ID == id {
-			if err := json.NewEncoder(w).Encode(user); err != nil {
-				log.Printf("failed to encode response: %v", err)
-			}
-			return
-		}
+	user, err := h.repo.GetUserByID(r.Context(), id)
+
+	if err != nil {
+		log.Printf("failed to get users list: %v", err)
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "user not found",
+		})
+		return
 	}
-
-	errMsg := map[string]string{
-		"error": "user not found",
-	}
-
-	w.WriteHeader(http.StatusNotFound)
-
-	if err := json.NewEncoder(w).Encode(errMsg); err != nil {
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
 		log.Printf("failed to encode error response: %v", err)
 	}
 }

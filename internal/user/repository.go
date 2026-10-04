@@ -103,3 +103,15 @@ func (r *Repository) GetUsers(ctx context.Context, limit int, offset int, term s
 		HasMore:       hasMore,
 	}, nil
 }
+
+func (r *Repository) GetUserByID(ctx context.Context, id string) (User, error) {
+	var user User
+
+	query := `SELECT id, name, email FROM users WHERE id = $1`
+
+	if err := r.db.QueryRow(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email); err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+}
