@@ -47,7 +47,7 @@ func userRoutes(mux *http.ServeMux, handler *user.Handler) {
 	mux.HandleFunc("GET "+apiVersion+"/users/{id}", handler.GetUserByIDHandler)
 	mux.HandleFunc("POST "+apiVersion+"/users", handler.CreateUserHandler)
 	mux.HandleFunc("PATCH "+apiVersion+"/users/{id}", handler.UpdateUserByIDHandler)
-	mux.HandleFunc("DELETE "+apiVersion+"/users/{id}", user.DeleteUserByIDHandler)
+	mux.HandleFunc("DELETE "+apiVersion+"/users/{id}", handler.DeleteUserByIDHandler)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

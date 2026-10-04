@@ -188,7 +188,7 @@ func (h *Handler) UpdateUserByIDHandler(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func DeleteUserByIDHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodDelete {
@@ -197,21 +197,23 @@ func DeleteUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.PathValue("id")
-	for index, user := range UserList {
-		if user.ID == id {
-			UserList = append(UserList[:index], UserList[index+1:]...)
-			w.WriteHeader(http.StatusNoContent)
+
+	if err := h.repo.DeleteUserByID(r.Context(), id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "user not found",
+			})
 			return
 		}
+
+		log.Printf("failed to delete user: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "failed to delete user",
+		})
+		return
 	}
 
-	errMsg := map[string]string{
-		"error": "user not found",
-	}
-	w.WriteHeader(http.StatusNotFound)
-
-	if err := json.NewEncoder(w).Encode(errMsg); err != nil {
-		log.Printf("failed to encode error response: %v", err)
-	}
-
+	w.WriteHeader(http.StatusNoContent)
 }

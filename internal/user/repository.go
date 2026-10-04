@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -130,4 +131,19 @@ func (r *Repository) UpdateUserByID(ctx context.Context, id string, payload Upda
 
 	return user, nil
 
+}
+
+func (r *Repository) DeleteUserByID(ctx context.Context, id string) error {
+	query := `DELETE FROM users WHERE id = $1`
+
+	cmdTag, err := r.db.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }
